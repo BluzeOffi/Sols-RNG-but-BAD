@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 
 namespace Sols_RNG_Copy
 {
@@ -12,23 +11,74 @@ namespace Sols_RNG_Copy
             Console.WindowHeight = 45;
             Console.WindowWidth = 35;
 
-            // variables
+            // arrays
 
-            string[] auras = {"Common", "Uncommon", "Rare", "Divinus", "Crystallized", "Magnetic", "Rage", "Aquatic"};
+            string[] auras = {"Common", "Uncommon", "Rare", "Divinus", "Crystallized", "Magnetic", "Rage", "Aquatic", "Melodic", "Chromatic"};
+            double[] chances = {5000, 2500, 1000, 150, 75, 45, 20, 10, 5, 1};
+            int[] auraValue = {1, 2, 5, 10, 25, 35, 50, 75, 100, 250};
+            ConsoleColor[] auraColors = {ConsoleColor.White, ConsoleColor.White, ConsoleColor.Blue, ConsoleColor.Yellow, ConsoleColor.Magenta, ConsoleColor.Red, ConsoleColor.DarkRed, ConsoleColor.Cyan, ConsoleColor.DarkYellow, ConsoleColor.DarkMagenta};
+            int[] inventory = new int[auras.Length];
+            double[] luckMultiplier = {0.7, 1.0, 1.5, 2.3, 3.5, 2.1, 1.8, 1.7, 1.6, 1.4};
+
+            // variables
 
             Random gen = new Random();
 
-            int sols = 0;
             int attempts = 0;
-            int luck = 0;
-            int rolled = 0;
+            bool luckActive = false;
             int cash = 0;
-            int rolledExpensive = 0;
 
-            string end = "no";
             string luckPotion = "no";
             string action = "a";
             string shopLine = "a";
+
+            // to get the auras
+
+            void GetAura()
+            {
+                double[] chancesToUse;
+
+                if (luckActive == true)
+                {
+                    double[] modifiedChances = new double[chances.Length];
+
+                    for (int i = 0; i < auras.Length; i++)
+                    { 
+                        modifiedChances[i] = chances[i] * luckMultiplier[i];
+                    }  
+                    chancesToUse = modifiedChances;
+                }
+                else
+                {
+                    chancesToUse = chances;
+                }
+
+                double total = 0;
+
+                foreach (double chance in chancesToUse)
+                {
+                    total += chance;
+                }
+
+                double roll = gen.NextDouble() * total;
+
+                double cumulative = 0;
+
+                for (int i = 0; i < chancesToUse.Length; i++)
+                { 
+                    cumulative += chancesToUse[i];
+
+                    if (roll < cumulative)
+                    {
+                        Console.ForegroundColor = auraColors[i];
+                        Console.WriteLine("You rolled.. " + auras[i]);
+                        Console.ResetColor();
+
+                        inventory[i]++;
+                        break;
+                    }
+                }
+            }
 
             // voids
 
@@ -44,12 +94,47 @@ namespace Sols_RNG_Copy
                 }  
                 else if (action == "shop")
                 {
-                    Console.WriteLine("What do you want to do?");
+                    Console.WriteLine("Available items: \nLuck Potion (luck)");
                     Shop();
+                }
+                else if (action == "sell")
+                {
+                    Sell();
+                }
+                else if (action == "inventory")
+                {
+                    ShowInventory();
+                }
+                else if (action == "coins")
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("You have " + cash + " coins!");
+                    Console.ResetColor();
+
+                    Console.WriteLine("\nThen what would you want to do?");
+                    Start();
+                }
+                else if (action == "luck")
+                {
+                    if (luckActive == true)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("You're lucky!");
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.WriteLine("You were not blessed by the lady luck.");
+                    }
+                
+                    Console.ResetColor();
+
+                    Console.WriteLine("\nThen what would you want to do?");
+                    Start();
                 }
                 else
                 {
-                    Console.WriteLine("That's not a valid arguement.\nWhat do you want to do?");
+                    Console.WriteLine("The only commands are:\nRoll, Shop, Sell, Inventory, Coins, and Luck.\nWhat do you want to do?");
                     Start();
                 }
             }
@@ -65,15 +150,17 @@ namespace Sols_RNG_Copy
 
                     if (luckPotion == "yes")
                     {
-                        if (cash >= 5)
+                        if (luckActive == true)
+                        {
+                            Console.WriteLine("You're already lucky. \nWhat would you like to do?");
+                            Start();
+                        }
+                        else if (cash >= 5)
                         {
                             Console.WriteLine("\nYour luck has been increased!");
-                            luck = 5;
+                            luckActive = true;
 
-                            for (int i = 0; i < 5; i++)
-                            {
-                                cash--;
-                            }
+                            cash -= 5;
 
                             Console.WriteLine("Then what would you want to do?");
                             Start();
@@ -93,117 +180,74 @@ namespace Sols_RNG_Copy
                         Start();
                     }
                 }
-                else if (shopLine == "sell")
+                else
                 {
-                    if (rolled >= 1)
-                    {
-                        if (rolledExpensive >= 1 && rolled >= 1)
-                        {
-                            for (int i = 0; i < 10; i++)
-                        {
-                            cash++;
-                        }
-                        Console.WriteLine("Here is your 10 coins!\nThen what would you like to do?");
-                        rolled = 0;
-                        rolledExpensive = 0;
-                        Start();
-                        }
-                        else if(rolled >= 1 && rolledExpensive <= 0)
-                        {
-                            for (int i = 0; i < 5; i++)
-                        {
-                            cash++;
-                        }
-                        Console.WriteLine("Here is your 5 coins!\nThen what would you like to do?");
-                        rolled = 0;
-                        Start();
-                        }
+                    Console.WriteLine("\nThat's not an valid argument.\nWhat would you like to do?");
+                    Start();
+                }
+            }
 
-                    }
-                    else
+            void Sell()
+            {
+                int totalCash = 0;
+
+                for (int i = 0; i < auras.Length; i++)
+                {
+                    totalCash += inventory[i] * auraValue[i];
+                    inventory[i] = 0;
+                }
+
+                cash += totalCash;
+
+                Console.WriteLine("You sold your auras for " + totalCash + " coins!");
+
+                Console.WriteLine("\nWhat action would you like to do?");
+
+                Start();
+            }
+
+            void ShowInventory()
+            {
+                for (int i = 0; i < auras.Length; i++)
+                {
+                    if (inventory[i] > 0)
                     {
-                        Console.WriteLine("You haven't even gotten any auras.\nWhat would you like to do?");
-                        Start();
+                        Console.WriteLine("-----------");
+                        Console.ForegroundColor = auraColors[i];
+                        Console.WriteLine($"{auras[i]} × {inventory[i]}");
                     }
                 }
+
+                Console.ResetColor();
+                Console.WriteLine("-----------");
+                Console.WriteLine("\nWhat action would you like to do?");
+
+                Start();
             }
 
             void Roll()
             {
-                while (attempts < 11)
+                while (attempts < 10)
                 {
-                Console.ReadKey();
+                    Console.ReadKey();
 
-                if (luck <= 0)
-                {
-                    sols = gen.Next(0, 3);
-                    switch (sols)
-                    {
-                        case 0:
-                            Console.ForegroundColor = ConsoleColor.White;
-                            Console.WriteLine("You rolled.. " + auras[sols]);
-                            attempts++;
-                            break;
-                        case 1:
-                            Console.ForegroundColor = ConsoleColor.White;
-                            Console.WriteLine("You rolled.. " + auras[sols]);
-                            attempts++;
-                            break;
-                        case 2:
-                            Console.ForegroundColor = ConsoleColor.Blue;
-                            Console.WriteLine("You rolled.. " + auras[sols]);
-                            attempts++;
-                            break;
-                    }   
-                }
-                else if (luck == 5)
-                {
-                    sols = gen.Next(0, 6);
-                    switch (sols)
-                    {
-                        case 0:
-                            Console.ForegroundColor = ConsoleColor.White;
-                            Console.WriteLine("You rolled.. Common!");
-                            attempts++;
-                            break;
-                        case 1:
-                            Console.ForegroundColor = ConsoleColor.White;
-                            Console.WriteLine("You rolled.. " + auras[sols]);
-                            attempts++;
-                            break;
-                        case 2:
-                            Console.ForegroundColor = ConsoleColor.Blue;
-                            Console.WriteLine("You rolled.. " + auras[sols]);
-                            attempts++;
-                            break;
-                        case 3:
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.WriteLine("You rolled.. " + auras[sols]);
-                            attempts++;
-                            break;
-                        case 4:
-                            Console.ForegroundColor = ConsoleColor.Magenta;
-                            Console.WriteLine("You rolled.. " + auras[sols]);
-                            attempts++;
-                            rolledExpensive = 1;
-                            break;
-                        case 5:
-                            Console.ForegroundColor = ConsoleColor.Red;
-                            Console.WriteLine("You rolled.. " + auras[sols]);
-                            attempts++;
-                            rolledExpensive = 1;
-                            break;
-                    } 
-                }    
+                    GetAura();
+
+                    attempts++;
                 }
 
-                rolled++;
-                luck = 0;
-                Console.ForegroundColor = ConsoleColor.Gray;
-                Console.WriteLine("\nYou've rolled 10 times. Now what would you like to do?");
-                Start();
+                if (luckActive == true)
+                {
+                    Console.WriteLine("You've rolled 10 times and your luck has ran out.\nWhat would you like to do?");
+                    luckActive = false;
+                    Start();
+                }
+                else
+                {
+                    Console.WriteLine("You've rolled 10 times.\nWhat would you like to do?");
+                    Start();
+                }
             }
-
 
             // function
             Console.WriteLine("Welcome to Sol's RNG Copy!\nWhat action would you like to do?");
