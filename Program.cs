@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Formats.Asn1;
+using System.IO;
 
 namespace Sols_RNG_Copy
 {
@@ -19,6 +21,7 @@ namespace Sols_RNG_Copy
             ConsoleColor[] auraColors = {ConsoleColor.White, ConsoleColor.White, ConsoleColor.Blue, ConsoleColor.Yellow, ConsoleColor.Magenta, ConsoleColor.Red, ConsoleColor.DarkRed, ConsoleColor.Cyan, ConsoleColor.DarkYellow, ConsoleColor.DarkMagenta};
             int[] inventory = new int[auras.Length];
             double[] luckMultiplier = {0.7, 1.0, 1.5, 2.3, 3.5, 2.1, 1.8, 1.7, 1.6, 1.4};
+            double[] superLuckMultiplier = {0.2, 0.7, 0.9, 1.6, 2.3, 2.7, 2.0, 1.9, 1.8, 1.7};
 
             // variables
 
@@ -26,9 +29,13 @@ namespace Sols_RNG_Copy
 
             int attempts = 0;
             bool luckActive = false;
+            bool cursedLuckActive = false;
+            bool rageActive = false;
             int cash = 0;
 
             string luckPotion = "no";
+            string cursedPotion = "no";
+            string ragePotion = "no";
             string action = "a";
             string shopLine = "a";
 
@@ -38,7 +45,27 @@ namespace Sols_RNG_Copy
             {
                 double[] chancesToUse;
 
-                if (luckActive == true)
+                if (cursedLuckActive == true && luckActive == true)
+                {
+                    double[] superModifiedChances = new double[chances.Length];
+
+                    for (int i = 0; i < auras.Length; i++)
+                    { 
+                        superModifiedChances[i] = chances[i] * superLuckMultiplier[i];
+                    }  
+                    chancesToUse = superModifiedChances;
+                }
+                else if (cursedLuckActive == true)
+                {
+                    double[] superModifiedChances = new double[chances.Length];
+
+                    for (int i = 0; i < auras.Length; i++)
+                    { 
+                        superModifiedChances[i] = chances[i] * superLuckMultiplier[i];
+                    }  
+                    chancesToUse = superModifiedChances;
+                }
+                else if (luckActive == true)
                 {
                     double[] modifiedChances = new double[chances.Length];
 
@@ -94,7 +121,7 @@ namespace Sols_RNG_Copy
                 }  
                 else if (action == "shop")
                 {
-                    Console.WriteLine("Available items: \nLuck Potion (luck)");
+                    Console.WriteLine("Available items: \nLuck Potion (luck)\nRage Potion (rage)\nCursed Potion (cursed)");
                     Shop();
                 }
                 else if (action == "sell")
@@ -132,9 +159,56 @@ namespace Sols_RNG_Copy
                     Console.WriteLine("\nThen what would you want to do?");
                     Start();
                 }
+                else if (action == "rage")
+                {
+                    if (rageActive == true)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.WriteLine("Your rage burns with fire.");
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("You're not enraged right now.");
+                    }
+                
+                    Console.ResetColor();
+
+                    Console.WriteLine("\nThen what would you want to do?");
+                    Start();
+                }
+                else if (action == "curse")
+                {
+                    if (cursedLuckActive == true)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.WriteLine("You're cursed beyond saving..");
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("You're still safe from the curse.");
+                    }
+                
+                    Console.ResetColor();
+
+                    Console.WriteLine("\nThen what would you want to do?");
+                    Start();
+                }
+                else if (action == "save")
+                {
+                    SaveGame();
+                    Start();
+                    
+                }
+                else if (action == "load")
+                {
+                    LoadGame();
+                    Start();
+                }
                 else
                 {
-                    Console.WriteLine("The only commands are:\nRoll, Shop, Sell, Inventory, Coins, and Luck.\nWhat do you want to do?");
+                    Console.WriteLine("The only commands are:\nRoll, Shop, Sell, Inventory, Coins, Luck, Rage, Curse, Save, and Load.\nWhat do you want to do?");
                     Start();
                 }
             }
@@ -161,6 +235,80 @@ namespace Sols_RNG_Copy
                             luckActive = true;
 
                             cash -= 5;
+
+                            Console.WriteLine("Then what would you want to do?");
+                            Start();
+                        }
+                        else
+                        {
+                            Console.WriteLine("You don't have enough money.");
+
+                            Console.WriteLine("Then what would you want to do?");
+                            Start();
+                        }
+                    }
+                    else
+                    {   
+                        Console.WriteLine("\nAlright then!");
+                        Console.WriteLine("Then what would you want to do?");
+                        Start();
+                    }
+                }
+                else if (shopLine == "rage")
+                {
+                    Console.WriteLine("Would you like a Rage Potion for 10 coins?");
+                    ragePotion = Console.ReadLine();
+
+                    if (ragePotion == "yes")
+                    {
+                        if (rageActive == true)
+                        {
+                            Console.WriteLine("You're already angry. \nWhat would you like to do?");
+                            Start();
+                        }
+                        else if (cash >= 5)
+                        {
+                            Console.WriteLine("\nYou have been enraged!");
+                            rageActive = true;
+
+                            cash -= 10;
+
+                            Console.WriteLine("Then what would you want to do?");
+                            Start();
+                        }
+                        else
+                        {
+                            Console.WriteLine("You don't have enough money.");
+
+                            Console.WriteLine("Then what would you want to do?");
+                            Start();
+                        }
+                    }
+                    else
+                    {   
+                        Console.WriteLine("\nAlright then!");
+                        Console.WriteLine("Then what would you want to do?");
+                        Start();
+                    }
+                }
+                else if (shopLine == "cursed")
+                {
+                    Console.WriteLine("Would you like a cursed Potion for 350 coins?");
+                    cursedPotion = Console.ReadLine();
+
+                    if (cursedPotion == "yes")
+                    {
+                        if (cursedLuckActive == true)
+                        {
+                            Console.WriteLine("You're already cursed. \nWhat would you like to do?");
+                            Start();
+                        }
+                        else if (cash >= 5)
+                        {
+                            Console.WriteLine("\nYou have been cursed by the ominous potion.");
+                            cursedLuckActive = true;
+
+                            cash -= 350;
 
                             Console.WriteLine("Then what would you want to do?");
                             Start();
@@ -227,19 +375,76 @@ namespace Sols_RNG_Copy
 
             void Roll()
             {
-                while (attempts < 10)
+                if (rageActive == true)
                 {
-                    Console.ReadKey();
+                    while (attempts < 15)
+                    {
+                        Console.ReadKey();
 
-                    GetAura();
+                        GetAura();
 
-                    attempts++;
+                        attempts++;
+                    }
                 }
+                else
+                {
+                    while (attempts < 10)
+                    {
+                        Console.ReadKey();
 
-                if (luckActive == true)
+                        GetAura();
+
+                        attempts++;
+                    }
+                }
+                
+                if (rageActive == true && luckActive == true && cursedLuckActive == true)
+                {
+                    Console.WriteLine("You've rolled 15 times, your cursed luck and rage has dissipated.\nWhat would you like to do?");
+                    luckActive = false;
+                    rageActive = false;
+                    cursedLuckActive = false;
+                    Start();
+                }
+                else if (rageActive == true && cursedLuckActive == true)
+                {
+                    Console.WriteLine("You've rolled 15 times, your cursed luck and rage has dissipated.\nWhat would you like to do?");
+                    luckActive = false;
+                    rageActive = false;
+                    cursedLuckActive = false;
+                    Start();
+                }
+                else if (luckActive == true && cursedLuckActive == true)
+                {
+                    Console.WriteLine("You've rolled 15 times, your cursed luck and rage has dissipated.\nWhat would you like to do?");
+                    luckActive = false;
+                    rageActive = false;
+                    cursedLuckActive = false;
+                    Start();
+                }
+                else if (rageActive == true && luckActive == true)
+                {
+                    Console.WriteLine("You've rolled 15 times, your luck and rage has dissipated.\nWhat would you like to do?");
+                    luckActive = false;
+                    rageActive = false;
+                    Start();
+                }
+                else if (rageActive == true)
+                {
+                    Console.WriteLine("You've rolled 15 times and you've calmed down.\nWhat would you like to do?");
+                    rageActive = false;
+                    Start();
+                }
+                else if (luckActive == true)
                 {
                     Console.WriteLine("You've rolled 10 times and your luck has ran out.\nWhat would you like to do?");
                     luckActive = false;
+                    Start();
+                }
+                else if (cursedLuckActive == true)
+                {
+                    Console.WriteLine("You've rolled 10 times and your cursed luck has ran out.\nWhat would you like to do?");
+                    cursedLuckActive = false;
                     Start();
                 }
                 else
@@ -247,6 +452,48 @@ namespace Sols_RNG_Copy
                     Console.WriteLine("You've rolled 10 times.\nWhat would you like to do?");
                     Start();
                 }
+            }
+
+            void SaveGame()
+            {
+                using (StreamWriter writer = new StreamWriter("savefile.txt"))
+                {
+                    writer.WriteLine(cash);
+                    writer.WriteLine(luckActive);
+
+                    for (int i = 0; i < inventory.Length; i++)
+                    {
+                        writer.WriteLine(inventory[i]);
+                    }
+                }
+
+                Console.WriteLine("Game saved!");
+
+                Console.WriteLine("\nWhat action would you like to do?");
+            }
+
+            void LoadGame()
+            {
+                if (!File.Exists("savefile.txt"))
+                {
+                    Console.WriteLine("No save file found.");
+                    return;
+                }
+
+                using (StreamReader reader = new StreamReader("savefile.txt"))
+                {
+                    cash = int.Parse(reader.ReadLine());
+                    luckActive = bool.Parse(reader.ReadLine());
+
+                    for (int i = 0; i < inventory.Length; i++)
+                    {
+                        inventory[i] = int.Parse(reader.ReadLine());
+                    }
+                }
+
+                Console.WriteLine("The save file has been loaded!");
+
+                Console.WriteLine("\nWhat action would you like to do?");
             }
 
             // function
